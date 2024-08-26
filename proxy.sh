@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Read the LISTEN and UPSTREAM environment variables
-LISTEN_9000_UPSTREAMS=${LISTEN_9000_UPSTREAMS:?Need to set LISTEN_9000_UPSTREAMS environment variable. Format: upstream_host1:upstream_port1,upstream_host2:upstream_port2,...}
-LISTEN_9001_UPSTREAMS=${LISTEN_9001_UPSTREAMS:?Need to set LISTEN_9001_UPSTREAMS environment variable. Format: upstream_host1:upstream_port1,upstream_host2:upstream_port2,...}
-
 # Start building the nginx.conf file
 cat > /etc/nginx/nginx.conf <<EOL
 worker_processes 1;
@@ -13,45 +9,24 @@ events {
 http {
 EOL
 
-# Parse and create upstream and server blocks for port 9000
-declare -A upstreams_9000
-IFS=',' read -ra UPSTREAMS_9000 <<< "$LISTEN_9000_UPSTREAMS"
-for upstream in "${UPSTREAMS_9000[@]}"; do
-    IFS=':' read upstream_host upstream_port <<< "$upstream"
-    upstream_name="upstream_${upstream_port}_${upstream_host//./_}"
-    if [[ -z "${upstreams_9000[$upstream_name]}" ]]; then
-        upstreams_9000[$upstream_name]=1
-        echo "    upstream $upstream_name { server $upstream_host:$upstream_port; }" >> /etc/nginx/nginx.conf
-    fi
-    cat >> /etc/nginx/nginx.conf <<EOL
-    server {
-        listen 9000;
-        location / {
-            proxy_pass http://$upstream_name;
-            proxy_set_header Host \$host;
-            proxy_set_header X-Real-IP \$remote_addr;
-            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto \$scheme;
-        }
-    }
-EOL
-done
+# Loop over all environment variables starting with 'LISTEN_'
+for var in $(printenv | grep -Eo '^LISTEN_[0-9]+' | sort -u); do
+    port="${var#LISTEN_}"
+    upstreams=$(printenv "$var")
 
-# Parse and create upstream and server blocks for port 9001
-declare -A upstreams_9001
-IFS=',' read -ra UPSTREAMS_9001 <<< "$LISTEN_9001_UPSTREAMS"
-for upstream in "${UPSTREAMS_9001[@]}"; do
-    IFS=':' read upstream_host upstream_port <<< "$upstream"
-    upstream_name="upstream_${upstream_port}_${upstream_host//./_}"
-    if [[ -z "${upstreams_9001[$upstream_name]}" ]]; then
-        upstreams_9001[$upstream_name]=1
-        echo "    upstream $upstream_name { server $upstream_host:$upstream_port; }" >> /etc/nginx/nginx.conf
-    fi
+    # Parse and create upstream and server blocks for each port
+    IFS=',' read -ra UPSTREAMS <<< "$upstreams"
+    for upstream in "${UPSTREAMS[@]}"; do
+        IFS=':' read upstream_host upstream_port <<< "$upstream"
+        echo "    upstream upstream_${port}_${upstream_host}_${upstream_port} { server ${upstream_host}:${upstream_port}; }" >> /etc/nginx/nginx.conf
+    done
+
+    # Add a server block for this port
     cat >> /etc/nginx/nginx.conf <<EOL
     server {
-        listen 9001;
+        listen ${port};
         location / {
-            proxy_pass http://$upstream_name;
+            proxy_pass http://upstream_${port}_${upstream_host}_${upstream_port};
             proxy_set_header Host \$host;
             proxy_set_header X-Real-IP \$remote_addr;
             proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
