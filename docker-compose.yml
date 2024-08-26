@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  # Internal load balancing using a simple nginx service
+  nginx:
+    image: devstroop/dynamic-nginx:latest
+    # Example proxy configuration
+    environment: |
+    - listen: 9000
+      upstream: server1:9000
+    - listen: 9000
+      upstream: server2:9000
+    - listen: 9000
+      upstream: server3:9000
+    - listen: 9000
+      upstream: server4:9000
+  
+    depends_on:
+      - server1
+      - server2
+      - server3
+      - server4
+    networks:
+      - ngnix-net
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: unless-stopped
+        
+networks:
+  ngnix-net:
+    driver: bridge
