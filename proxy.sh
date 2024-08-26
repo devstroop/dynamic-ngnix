@@ -39,7 +39,7 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+(_WSS)?'); do
             proxy_set_header Upgrade \$http_upgrade;
             proxy_set_header Connection \"upgrade\";
         "
-        # Skip upstreams check for WebSocket configuration
+        # Set upstream_block_name to a dummy value to avoid using it in WebSocket configurations
         upstream_block_name=""
     else
         # Handle non-WebSocket ports
@@ -70,7 +70,8 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+(_WSS)?'); do
     server {
         listen ${port};
         location / {
-            proxy_pass http://${upstream_block_name};
+            # Only add proxy_pass directive if upstream_block_name is not empty
+            ${upstream_block_name:+proxy_pass http://${upstream_block_name};}
             proxy_set_header Host \$host;
             proxy_set_header X-Real-IP \$remote_addr;
             proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
