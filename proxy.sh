@@ -38,6 +38,18 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+' | sort -u); do
     done
     echo "    }" >> /etc/nginx/nginx.conf
 
+    # Determine if WebSocket configuration should be added
+    if [[ "$var" == LISTEN_*_WSS ]]; then
+        ws_config="
+            # To support websockets
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade \$http_upgrade;
+            proxy_set_header Connection \"upgrade\";
+        "
+    else
+        ws_config=""
+    fi
+
     # Add a server block for this port
     cat >> /etc/nginx/nginx.conf <<EOL
     server {
@@ -48,11 +60,8 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+' | sort -u); do
             proxy_set_header X-Real-IP \$remote_addr;
             proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto \$scheme;
-            
-            # To support websockets
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade \$http_upgrade;
-            proxy_set_header Connection "upgrade";
+
+            $ws_config
         }
     }
 EOL

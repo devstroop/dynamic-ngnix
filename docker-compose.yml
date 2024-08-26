@@ -6,8 +6,8 @@ services:
     image: devstroop/dynamic-nginx:latest
     environment:
       - LISTEN_9000=server1:9000,server2:9000,server3:9000,server4:9000
-      - LISTEN_9001=server1:9001,server2:9001,server3:9001,server4:9001
-      # Add more LISTEN_<port> variables as needed
+      - LISTEN_9001_WSS=server1:9001,server2:9001,server3:9001,server4:9001
+      # Add more LISTEN_<port> or LISTEN_<port>_WSS variables as needed
     depends_on:
       - server1
       - server2
