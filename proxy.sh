@@ -9,6 +9,7 @@ events {
 http {
     access_log /var/log/nginx/access.log;
     error_log /var/log/nginx/error.log;
+
 EOL
 
 # Print environment variables for debugging
@@ -36,15 +37,12 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+(_WSS)?'); do
     if [[ "$suffix" == "_WSS" ]]; then
         echo "WebSocket configuration detected for port ${port}"
         ws_config="
-            # To support websockets
             proxy_http_version 1.1;
             proxy_set_header Upgrade \$http_upgrade;
             proxy_set_header Connection \"upgrade\";
         "
-        # Set upstream_block_name to a dummy value to avoid using it in WebSocket configurations
         upstream_block_name=""
     else
-        # Handle non-WebSocket ports
         if [ -z "$upstreams" ]; then
             echo "No upstreams defined for port ${port}, skipping..."
             continue
@@ -80,9 +78,6 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+(_WSS)?'); do
 
             $ws_config
         }
-
-        # Ensure root directive is correctly configured if needed
-        # root /etc/nginx/html;
     }
 EOL
 done
