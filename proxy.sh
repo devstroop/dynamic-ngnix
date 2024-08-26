@@ -40,8 +40,22 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+(_WSS)?'); do
             proxy_set_header Upgrade \$http_upgrade;
             proxy_set_header Connection \"upgrade\";
         "
-        # In WSS case, don't create upstream block but handle upstream directly
-        upstream_block_name=""
+        
+        # Parse and create upstream and server blocks for each port
+        IFS=',' read -ra UPSTREAMS <<< "$upstreams"
+        upstream_block_name="upstream_${port}"
+
+        # Define upstream block
+        echo "    upstream ${upstream_block_name} {" >> /etc/nginx/nginx.conf
+        for upstream in "${UPSTREAMS[@]}"; do
+            IFS=':' read -r upstream_host upstream_port <<< "$upstream"
+            if [[ -z "$upstream_host" || -z "$upstream_port" ]]; then
+                echo "Invalid upstream format: ${upstream}, skipping..."
+                continue
+            fi
+            echo "        server ${upstream_host}:${upstream_port};" >> /etc/nginx/nginx.conf
+        done
+        echo "    }" >> /etc/nginx/nginx.conf
     else
         if [ -z "$upstreams" ]; then
             echo "No upstreams defined for port ${port}, skipping..."
@@ -75,8 +89,6 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+(_WSS)?'); do
             proxy_set_header X-Real-IP \$remote_addr;
             proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto \$scheme;
-            proxy_set_header X-NginX-Proxy true;
-            real_ip_header X-Real-IP;
             proxy_connect_timeout 300;
 
             $ws_config
