@@ -17,6 +17,10 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+' | sort -u); do
     port="${var#LISTEN_}"
     upstreams=$(printenv "$var")
 
+    # Debugging output
+    echo "Processing port: ${port}"
+    echo "Upstreams: ${upstreams}"
+
     if [ -z "$upstreams" ]; then
         echo "No upstreams defined for port ${port}, skipping..."
         continue
