@@ -14,15 +14,20 @@ http {
 EOL
 
 # Parse and create upstream and server blocks for port 9000
+declare -A upstreams_9000
 IFS=',' read -ra UPSTREAMS_9000 <<< "$LISTEN_9000_UPSTREAMS"
 for upstream in "${UPSTREAMS_9000[@]}"; do
     IFS=':' read upstream_host upstream_port <<< "$upstream"
-    echo "    upstream upstream_${upstream_port} { server ${upstream_host}:${upstream_port}; }" >> /etc/nginx/nginx.conf
+    upstream_name="upstream_${upstream_port}_${upstream_host//./_}"
+    if [[ -z "${upstreams_9000[$upstream_name]}" ]]; then
+        upstreams_9000[$upstream_name]=1
+        echo "    upstream $upstream_name { server $upstream_host:$upstream_port; }" >> /etc/nginx/nginx.conf
+    fi
     cat >> /etc/nginx/nginx.conf <<EOL
     server {
         listen 9000;
         location / {
-            proxy_pass http://upstream_${upstream_port};
+            proxy_pass http://$upstream_name;
             proxy_set_header Host \$host;
             proxy_set_header X-Real-IP \$remote_addr;
             proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -33,15 +38,20 @@ EOL
 done
 
 # Parse and create upstream and server blocks for port 9001
+declare -A upstreams_9001
 IFS=',' read -ra UPSTREAMS_9001 <<< "$LISTEN_9001_UPSTREAMS"
 for upstream in "${UPSTREAMS_9001[@]}"; do
     IFS=':' read upstream_host upstream_port <<< "$upstream"
-    echo "    upstream upstream_${upstream_port} { server ${upstream_host}:${upstream_port}; }" >> /etc/nginx/nginx.conf
+    upstream_name="upstream_${upstream_port}_${upstream_host//./_}"
+    if [[ -z "${upstreams_9001[$upstream_name]}" ]]; then
+        upstreams_9001[$upstream_name]=1
+        echo "    upstream $upstream_name { server $upstream_host:$upstream_port; }" >> /etc/nginx/nginx.conf
+    fi
     cat >> /etc/nginx/nginx.conf <<EOL
     server {
         listen 9001;
         location / {
-            proxy_pass http://upstream_${upstream_port};
+            proxy_pass http://$upstream_name;
             proxy_set_header Host \$host;
             proxy_set_header X-Real-IP \$remote_addr;
             proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
