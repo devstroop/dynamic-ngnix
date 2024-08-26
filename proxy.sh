@@ -44,6 +44,7 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+' | sort -u); do
 
     # Determine if WebSocket configuration should be added
     if [[ "$var" == LISTEN_*_WSS ]]; then
+        echo "WebSocket configuration detected for port ${port}"
         ws_config="
             # To support websockets
             proxy_http_version 1.1;
@@ -51,6 +52,7 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+' | sort -u); do
             proxy_set_header Connection \"upgrade\";
         "
     else
+        echo "No WebSocket configuration detected for port ${port}"
         ws_config=""
     fi
 
