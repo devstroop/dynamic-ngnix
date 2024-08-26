@@ -80,7 +80,7 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+(_WSS)?'); do
             $ws_config
         }
 
-        # If you don't want Nginx to serve static files, you can comment out or remove this line:
+        # Ensure root directive is correctly configured if needed
         # root /etc/nginx/html;
     }
 EOL
@@ -88,6 +88,10 @@ done
 
 # Close the http block
 echo "}" >> /etc/nginx/nginx.conf
+
+# Print the generated configuration for debugging
+echo "Generated nginx.conf:"
+cat /etc/nginx/nginx.conf
 
 # Start nginx
 nginx -g 'daemon off;'
