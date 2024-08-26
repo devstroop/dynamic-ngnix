@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Read the PROXY environment variable
-PROXY=${PROXY:?Need to set PROXY environment variable. Format: PROXY=upstream_host1:upstream_port1:listen_port1,upstream_host2:upstream_port2:listen_port2}
+PROXY=${PROXY:?Need to set PROXY environment variable. Format: PROXY=- listen: port1 upstream: host1:port1, ...}
 
 # Start building the nginx.conf file
 cat > /etc/nginx/nginx.conf <<EOL
@@ -13,31 +13,21 @@ http {
 EOL
 
 # Parse the PROXY variable and create server and upstream blocks
-IFS=',' read -ra PROXY_PAIRS <<< "$PROXY"
-for pair in "${PROXY_PAIRS[@]}"; do
-    IFS=':-' read upstream_host upstream_port listen_port <<< "$pair"
-    
-    # Create upstream block
-    upstream_name="upstream_${upstream_port}"
-    echo "    upstream $upstream_name { server $upstream_host:$upstream_port; }" >> /etc/nginx/nginx.conf
-    
-    # Create server block
-    cat >> /etc/nginx/nginx.conf <<EOL
-    server {
-        listen $listen_port;
-        location / {
-            proxy_pass http://$upstream_name;
-            proxy_set_header Host \$host;
-            proxy_set_header X-Real-IP \$remote_addr;
-            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto \$scheme;
-        }
-    }
-EOL
-done
+echo "$PROXY" | awk '
+/^- listen:/ { listen_port = $2 }
+/^  upstream:/ { upstream_host_port = substr($0, index($0, ":") + 1) }
+END {
+    split(upstream_host_port, arr, ":")
+    upstream_host = arr[1]
+    upstream_port = arr[2]
+
+    print "    upstream upstream_" upstream_port " { server " upstream_host ":" upstream_port "; }" >> "/etc/nginx/nginx.conf"
+    print "    server { listen " listen_port "; location / { proxy_pass http://upstream_" upstream_port "; proxy_set_header Host \$host; proxy_set_header X-Real-IP \$remote_addr; proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for; proxy_set_header X-Forwarded-Proto \$scheme; } }" >> "/etc/nginx/nginx.conf"
+}
+'
 
 # Close the http block
 echo "}" >> /etc/nginx/nginx.conf
 
 # Start nginx
-nginx -g 'daemon
+nginx -g 'daemon off;'
