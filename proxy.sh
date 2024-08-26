@@ -40,6 +40,7 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+(_WSS)?'); do
             proxy_set_header Upgrade \$http_upgrade;
             proxy_set_header Connection \"upgrade\";
         "
+        # In WSS case, don't create upstream block but handle upstream directly
         upstream_block_name=""
     else
         if [ -z "$upstreams" ]; then
