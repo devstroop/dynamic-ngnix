@@ -12,6 +12,10 @@ EOL
 # Initialize an array to store upstream names
 declare -A upstream_names
 
+# Debug output for all environment variables
+echo "Available environment variables:"
+printenv
+
 # Loop over all environment variables starting with 'LISTEN_'
 for var in $(printenv | grep -Eo '^LISTEN_[0-9]+' | sort -u); do
     port="${var#LISTEN_}"
