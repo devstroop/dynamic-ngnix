@@ -9,7 +9,6 @@ events {
 http {
     access_log /var/log/nginx/access.log;
     error_log /var/log/nginx/error.log;
-
 EOL
 
 # Print environment variables for debugging
@@ -75,6 +74,8 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+(_WSS)?'); do
             proxy_set_header X-Real-IP \$remote_addr;
             proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto \$scheme;
+            proxy_set_header X-NginX-Proxy true;
+            real_ip_header X-Real-IP;
             proxy_connect_timeout 300;
 
             $ws_config
