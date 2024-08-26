@@ -2,7 +2,7 @@
 FROM nginx:latest
 
 # Install necessary tools for the script
-RUN apt-get update && apt-get install -y bash awk
+RUN apt-get update && apt-get install -y bash gawk
 
 # Copy the bash script into the container
 COPY proxy.sh /usr/local/bin/proxy.sh
