@@ -79,9 +79,6 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+(_WSS)?'); do
 
             $ws_config
         }
-
-        # Ensure root directive is correctly configured if needed
-        # root /etc/nginx/html;
     }
 EOL
 done
