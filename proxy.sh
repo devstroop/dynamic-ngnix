@@ -83,6 +83,10 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+(_WSS)?'); do
     cat >> /etc/nginx/nginx.conf <<EOL
     server {
         listen ${port};
+        ignore_invalid_headers off;
+        client_max_body_size 0;
+        proxy_buffering off;
+        proxy_request_buffering off;
         location / {
             ${upstream_block_name:+proxy_pass http://${upstream_block_name};}
             proxy_set_header Host \$host;
@@ -90,6 +94,7 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+(_WSS)?'); do
             proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto \$scheme;
             proxy_connect_timeout 300;
+            chunked_transfer_encoding off;
 
             $ws_config
         }
