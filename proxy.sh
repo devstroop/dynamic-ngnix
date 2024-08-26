@@ -95,5 +95,6 @@ cat /etc/nginx/nginx.conf
 # Test Nginx configuration
 nginx -t
 
-# Restart Nginx to apply the configuration
-nginx -s reload
+# Start Nginx
+nginx -g "daemon off;"
+ 
