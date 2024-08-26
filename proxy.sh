@@ -51,7 +51,7 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+' | sort -u); do
             
             # To support websockets
             proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Upgrade \$http_upgrade;
             proxy_set_header Connection "upgrade";
         }
     }
