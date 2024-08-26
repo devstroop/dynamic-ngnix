@@ -11,13 +11,12 @@ jobs:
     steps:
       - name: Checkout the code
         uses: actions/checkout@v2
-
+        
       - name: Log in to Docker Hub
-        run: docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
+        run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
       - name: Build and tag Docker image
         run: docker build -t ${{ secrets.DOCKERHUB_REF }} .
 
       - name: Push Docker image to Docker Hub
         run: docker push ${{ secrets.DOCKERHUB_REF }}
-        
