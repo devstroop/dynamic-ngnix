@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build-and-push:
+  build-and-publish:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the code
