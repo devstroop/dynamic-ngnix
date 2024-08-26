@@ -48,6 +48,11 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+' | sort -u); do
             proxy_set_header X-Real-IP \$remote_addr;
             proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto \$scheme;
+            
+            # To support websockets
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
         }
     }
 EOL
