@@ -15,7 +15,7 @@ printenv
 
 # Loop over all environment variables starting with 'LISTEN_'
 for var in $(printenv | grep -Eo '^LISTEN_[0-9]+(_WSS)?'); do
-    # Extract port number
+    # Extract port number and suffix
     if [[ "$var" =~ LISTEN_([0-9]+)(_[A-Z]+)? ]]; then
         port="${BASH_REMATCH[1]}"
         suffix="${BASH_REMATCH[2]}"
@@ -30,14 +30,25 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+(_WSS)?'); do
     echo "Processing port: ${port}"
     echo "Upstreams: ${upstreams}"
 
-    # Skip checking for upstreams if it's a WebSocket configuration
-    if [[ "$suffix" != "_WSS" && -z "$upstreams" ]]; then
-        echo "No upstreams defined for port ${port}, skipping..."
-        continue
-    fi
+    # Determine if WebSocket configuration should be added
+    if [[ "$suffix" == "_WSS" ]]; then
+        echo "WebSocket configuration detected for port ${port}"
+        ws_config="
+            # To support websockets
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade \$http_upgrade;
+            proxy_set_header Connection \"upgrade\";
+        "
+        # Skip upstreams check for WebSocket configuration
+        upstream_block_name=""
+    else
+        # Handle non-WebSocket ports
+        if [ -z "$upstreams" ]; then
+            echo "No upstreams defined for port ${port}, skipping..."
+            continue
+        fi
 
-    # Parse and create upstream and server blocks for each port
-    if [[ "$suffix" != "_WSS" ]]; then
+        # Parse and create upstream and server blocks for each port
         IFS=',' read -ra UPSTREAMS <<< "$upstreams"
         upstream_block_name="upstream_${port}"
 
@@ -52,20 +63,6 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+(_WSS)?'); do
             echo "        server ${upstream_host}:${upstream_port};" >> /etc/nginx/nginx.conf
         done
         echo "    }" >> /etc/nginx/nginx.conf
-    fi
-
-    # Determine if WebSocket configuration should be added
-    if [[ "$suffix" == "_WSS" ]]; then
-        echo "WebSocket configuration detected for port ${port}"
-        ws_config="
-            # To support websockets
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade \$http_upgrade;
-            proxy_set_header Connection \"upgrade\";
-        "
-    else
-        echo "No WebSocket configuration detected for port ${port}"
-        ws_config=""
     fi
 
     # Add a server block for this port
