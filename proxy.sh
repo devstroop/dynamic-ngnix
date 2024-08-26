@@ -7,6 +7,9 @@ events {
     worker_connections 1024;
 }
 http {
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log;
+
 EOL
 
 # Print environment variables for debugging
@@ -39,7 +42,6 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+(_WSS)?'); do
             proxy_set_header Upgrade \$http_upgrade;
             proxy_set_header Connection \"upgrade\";
         "
-        # Set upstream_block_name to a dummy value to avoid using it in WebSocket configurations
         upstream_block_name=""
     else
         # Handle non-WebSocket ports
@@ -89,6 +91,9 @@ echo "}" >> /etc/nginx/nginx.conf
 # Print the generated configuration for debugging
 echo "Generated nginx.conf:"
 cat /etc/nginx/nginx.conf
+
+# Test Nginx configuration
+nginx -t
 
 # Start nginx
 nginx -g 'daemon off;'
