@@ -79,6 +79,9 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+(_WSS)?'); do
 
             $ws_config
         }
+
+        # If you don't want Nginx to serve static files, you can comment out or remove this line:
+        # root /etc/nginx/html;
     }
 EOL
 done
