@@ -20,10 +20,10 @@ Dynamic ngnix reverse proxy, requires zero explicit configuration.
 # Docker Compose
 
 ```
----
 version: '3.8'
 
 services:
+  # Internal load balancing using a simple nginx service
   nginx:
     image: devstroop/dynamic-nginx:latest
     # Example proxy configuration
@@ -36,6 +36,5 @@ services:
         upstream: server3:9000
       - listen: 9000
         upstream: server4:9000
-  
----
+
 ```
