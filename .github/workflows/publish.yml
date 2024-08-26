@@ -1,0 +1,23 @@
+name: Publish to Docker Hub
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v2
+
+      - name: Log in to Docker Hub
+        run: docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Build and tag Docker image
+        run: docker build -t proxy${{ secrets.DOCKERHUB_REF }} .
+
+      - name: Push Docker image to Docker Hub
+        run: docker push proxy${{ secrets.DOCKERHUB_REF }}
+        
