@@ -9,7 +9,6 @@ events {
 http {
     access_log /var/log/nginx/access.log;
     error_log /var/log/nginx/error.log;
-
 EOL
 
 # Print environment variables for debugging
@@ -42,6 +41,7 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+(_WSS)?'); do
             proxy_set_header Upgrade \$http_upgrade;
             proxy_set_header Connection \"upgrade\";
         "
+        # Set upstream_block_name to a dummy value to avoid using it in WebSocket configurations
         upstream_block_name=""
     else
         # Handle non-WebSocket ports
@@ -72,7 +72,6 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+(_WSS)?'); do
     server {
         listen ${port};
         location / {
-            # Only add proxy_pass directive if upstream_block_name is not empty
             ${upstream_block_name:+proxy_pass http://${upstream_block_name};}
             proxy_set_header Host \$host;
             proxy_set_header X-Real-IP \$remote_addr;
@@ -81,6 +80,9 @@ for var in $(printenv | grep -Eo '^LISTEN_[0-9]+(_WSS)?'); do
 
             $ws_config
         }
+
+        # Ensure root directive is correctly configured if needed
+        # root /etc/nginx/html;
     }
 EOL
 done
